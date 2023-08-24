@@ -1,0 +1,56 @@
+#cloud-config
+
+packages:
+- python3.9
+- python3.9-venv
+- authbind
+
+write_files:
+  - path: /home/ubuntu/webapp/main.py
+    owner: ubuntu:ubuntu
+    permissions: 0o600
+    defer: true
+    content: |
+      from flask import Flask, session
+
+      from flask_session import Session
+      
+      app = Flask(__name__)
+      app.config.update(
+          DEBUG = True,
+          SESSION_TYPE = "filesystem",
+          PERMANENT_SESSION_LIFETIME = 10,
+      )
+      Session(app)
+
+      @app.route("/")
+      def index():
+          session.permanent = True
+          session["name"] = "my_session_1"
+          return "Congratulations, it's a web app AAA!"
+
+  - path: /home/ubuntu/webapp/app.yml
+    owner: ubuntu:ubuntu
+    permissions: 0o600
+    defer: true
+    content: |
+      runtime: python39
+  - path: /home/ubuntu/webapp/requirements.txt
+    owner: ubuntu:ubuntu
+    permissions: 0o600
+    defer: true
+    content: |
+      Flask>=2.2
+      Flask-Session>=0.5.0
+      gunicorn>=21.2.0
+
+runcmd:
+- touch /etc/authbind/byport/80
+- chmod 777 /etc/authbind/byport/80
+- cd /home/ubuntu/webapp/
+- python3.9 -m venv venv
+- . venv/bin/activate
+- [ pip, install, -r, requirements.txt ]
+- chown -R ubuntu:ubuntu /home/ubuntu/webapp/
+- authbind --deep gunicorn main:app -b 0.0.0.0:80 --log-level debug --reload &
+- deactivate
