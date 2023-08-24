@@ -72,27 +72,21 @@ Now check the load balancer service using its DNS. You have to get the same repo
 
 Add Sticy policies into the Load Balancer instance by using the api calls:
 
-to Add a LB cookie sticky policy use [doc](https://docs.outscale.com/lbu#createlbcookiestickinesspolicy): 
+to Add a LB cookie sticky policy use [doc](https://docs.aws.amazon.com/cli/latest/reference/elbv2/modify-target-group-attributes.html): 
 
 ```bash
-osc-cli lbu CreateLBCookieStickinessPolicy --CookieExpirationPeriod 10 --LoadBalancerName "terraform-balancer" --PolicyName "LBCookie"
+aws elbv2 modify-target-group-attributes --target-group-arn "arn:aws:elasticloadbalancing:eu-west-3:224292614096:targetgroup/terraform-balancer-target-group/064dba88b9985a05" --attributes Key=stickiness.enabled,Value=true Key=stickiness.lb_cookie.duration_seconds,Value=20
 ```
 
-to Add an APP cookie sticky policy use [doc](https://docs.outscale.com/lbu#createappcookiestickinesspolicy): 
+to Add an APP cookie sticky policy use [doc](https://docs.aws.amazon.com/cli/latest/reference/elbv2/modify-target-group-attributes.html): 
 
 ```bash
-osc-cli lbu CreateAppCookieStickinessPolicy --CookieName "session" --LoadBalancerName "terraform-balancer" --PolicyName "AppCookie"
+aws elbv2 modify-target-group-attributes --target-group-arn "arn:aws:elasticloadbalancing:eu-west-3:224292614096:targetgroup/terraform-balancer-target-group/ed47c156212b0b81" --attributes Key=stickiness.enabled,Value=true Key=stickiness.type,Value=app_cookie Key=stickiness.app_cookie.cookie_name,Value=session Key=stickiness.app_cookie.duration_seconds,Value=10
 ```
-
-then set the created sticky policy by using [doc](https://docs.outscale.com/lbu#setloadbalancerpoliciesoflistener):
-
-```bash
-osc-cli lbu SetLoadBalancerPoliciesOfListener --LoadBalancerName "terraform-balancer" --LoadBalancerPort 80 --PolicyNames.member.1 "AppCookie"
-```
-
-Change `PolicyNames.member.1` to `LBCookie` to use the LB cookie sticky policy instead.
 
 Check the behavior on the web browser by using its DNS (Inspect the cookie value and its expiration date). 
+
+For more information see [Sticky sessions for your Application Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/sticky-sessions.html)
 
 ## Recomendations
 
@@ -100,7 +94,7 @@ To access to the private vms, connect first into the public vm (Bouncer vm):
 
 ```bash
 ssh-add <private_ssh_key>  
-ssh -i <private_ssh_key> outscale@<public_ip_bouncer_vm> -A
+ssh -i <private_ssh_key> ubuntu@<public_ip_bouncer_vm> -A
 ```
 
 then connect into the public vms:
